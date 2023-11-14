@@ -14,9 +14,9 @@ function App() {
     <>
       <h3>{auth?.nickname || 'You are not logged in to your account.'}</h3>
       <Routes>
-        <Route path="/" element={<HomePage/>}/>
-        <Route path="/login" element={<LoginPage/>}/>
-        <Route path="/signup" element={<SignUpPage/>}/>
+        <Route path="/" element={auth ? <HomePage /> : <LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
       </Routes>
     </>
   )
