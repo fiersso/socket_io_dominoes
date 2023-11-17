@@ -23,7 +23,7 @@ const AuthContext = createContext({} as AuthContextType)
 export const AuthProvider = ({ children }: { children: ReactElement }) => {
     const [auth, setAuth] = useState<UserType | null>(cookies.get('authorization') || null)
 
-    const socket = useRef<Socket>(io('http://127.0.0.1:4500'))
+    const socket = useRef<Socket>(io('http://localhost:4500'))
 
     const login = (user: UserType) => {
         setAuth(user)
@@ -52,11 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactElement }) => {
 
     useEffect(() => {
         if (auth) {
-            socket.current.disconnect()
             socket.current.connect()
             init()
-        } else if (!auth) {
-            socket.current.disconnect()
         }
     }, [auth])
 
