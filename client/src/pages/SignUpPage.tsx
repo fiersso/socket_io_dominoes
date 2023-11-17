@@ -30,18 +30,18 @@ function SignupPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (auth) { navigate('/') }
+    if ( auth ) {navigate('/')}
   }, [])
 
   const onSubmit = handleSubmit((formData) => {
     axios.post('/signup', {
       ...formData
     })
-      .then(res => {
-        login(res.data.data)
-        navigate('/')
-      })
-      .catch(error => alert(error?.response?.data?.message))
+    .then(res => {
+      login(res.data.data)
+      navigate('/')
+    })
+    .catch(error => console.log(error))
   })
 
   return (
@@ -56,7 +56,7 @@ function SignupPage() {
 
           <input type="submit" />
         </form>
-        <Link to={'/login'} children={'Login'} />
+        <Link to={'/login'} children={'Login'}/>
       </div>
     </>
   )

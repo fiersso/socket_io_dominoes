@@ -1,5 +1,5 @@
 import { ReactElement, createContext, useEffect, useRef, useState } from "react"
-import { io } from "socket.io-client"
+import { Socket, io } from "socket.io-client"
 import Cookies from 'universal-cookie'
 
 const cookies = new Cookies()
@@ -9,21 +9,21 @@ type UserType = {
     accessToken: string,
     email: string,
     freshToken: string,
-} | null
+}
 
 type AuthContextType = {
-    auth: UserType,
+    auth: UserType | null,
     login: (user: UserType) => void,
     logout: () => void,
-    socket: any,
+    socket: Socket,
 }
 
 const AuthContext = createContext({} as AuthContextType)
 
 export const AuthProvider = ({ children }: { children: ReactElement }) => {
-    const [auth, setAuth] = useState<UserType>(cookies.get('authorization') || null)
+    const [auth, setAuth] = useState<UserType | null>(cookies.get('authorization') || null)
 
-    const socketRef = useRef<any>(null)
+    const socket = useRef<Socket>(io('http://127.0.0.1:4500'))
 
     const login = (user: UserType) => {
         setAuth(user)
@@ -37,23 +37,31 @@ export const AuthProvider = ({ children }: { children: ReactElement }) => {
         cookies.remove('authorization')
     }
 
+    const init = () => {
+        socket.current.emit('init', auth?.accessToken)
+    }
+
     useEffect(() => {
-        if (!auth && socketRef.current) {
-            socketRef.current.disconnect(true)
-            socketRef.current = null
-            return
-        }
+        socket.current.on('error', (error) => {
+            alert(error?.message || 'error, but no exists message.')
+            if (error?.code === 401) {
+                logout()
+            }
+        })
+    }, [])
 
-        if (auth && !socketRef.current) {
-            socketRef.current = io('http://127.0.0.1:4500')
-            socketRef.current.emit('init', auth.accessToken)
-            return
+    useEffect(() => {
+        if (auth) {
+            socket.current.disconnect()
+            socket.current.connect()
+            init()
+        } else if (!auth) {
+            socket.current.disconnect()
         }
-
     }, [auth])
 
     return (
-        <AuthContext.Provider value={{ socket: socketRef.current, auth, login, logout }}>
+        <AuthContext.Provider value={{ auth, login, logout, socket: socket.current }}>
             {children}
         </AuthContext.Provider>
     )
