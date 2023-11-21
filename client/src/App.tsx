@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom"
-import HomePage from "./pages/HomePage"
+import Lobby from "./pages/Lobby"
 import LoginPage from "./pages/LoginPage"
 import SignUpPage from "./pages/SignUpPage"
 import { useContext } from "react"
@@ -12,11 +12,10 @@ function App() {
 
   return (
     <>
-      {/* <h3>{auth?.nickname || 'You are not logged in to your account.'}</h3> */}
       <Routes>
         <Route path="/" element={auth
-          ? <HomePage/>
-          : <Navigate to={'/login'}/>
+          ? <Lobby/>
+          : <Navigate to={'/signup'}/>
         }/>
         <Route path="/login" element={<LoginPage/>}/>
         <Route path="/signup" element={<SignUpPage/>}/>

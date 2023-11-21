@@ -3,3 +3,55 @@
   margin: 0;
   box-sizing: border-box;
 }
+
+.domino {
+  transform: rotate3d(0, 1, 0, 180deg);
+  transition: all 1s cubic-bezier(0.075, 0.82, 0.165, 1);
+  border: 0.2rem solid black;
+  width: 3rem;
+  margin: 1rem;
+  height: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-family: monospace;
+  color: rgb(102, 102, 102);
+  background: black;
+}
+
+.Game {
+  display: flex;
+}
+/* 
+.domino:hover {
+  transform: scale(1.1);
+  transform: rotate3d(0, 1, 0, 180deg);
+  cursor: pointer;
+}
+
+
+.hidden {
+  border: 0.2rem solid black;
+  width: 3rem;
+  margin: 1rem;
+  height: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-family: monospace;
+  color: white;
+  background: black;
+} */
+
+.selected {
+  color: white;
+  transform: rotate3d(0, 1, 0, 0deg);
+}
+
+.EnemyGameTable {
+  background-color: rgb(190, 190, 190);
+  opacity: 0.8;
+  transform: scale(0.8);
+}

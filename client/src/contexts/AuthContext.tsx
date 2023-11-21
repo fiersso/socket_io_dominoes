@@ -7,6 +7,7 @@ const cookies = new Cookies()
 type UserType = {
     nickname: string,
     accessToken: string,
+    id: number,
     email: string,
     freshToken: string,
 }
@@ -52,7 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactElement }) => {
 
     useEffect(() => {
         if (auth) {
-            socket.current.connect()
             init()
         }
     }, [auth])

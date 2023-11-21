@@ -52,6 +52,21 @@ let onlineUsers = new Map()
 
 let rooms = {}
 
+let activeGames = {
+	// '<roomId>': {
+	// 	'<userId1>': {
+	// 		dominoes: [
+	// 			[1, 1, 2,],
+	// 			[1, 3, 4],
+	// 			[5, 3, 1],
+	// 			[3, 5, 4]
+	// 		],
+	// 	},
+	// 	'<userId2>': {
+	// 		dominoes: [[1, 1, null,], [1, 3, 4], [5, null, 1], [3, 5, 4]],
+	// 	}
+	// }
+}
 
 io.on('connect', socket => {
 
@@ -64,21 +79,51 @@ io.on('connect', socket => {
 			}
 
 			const userData = db.prepare('select * from users where id = (?)').get(auth.id)
-			onlineUsers.set(socket.id, { ...userData, currentRoom: null })
+			delete userData.password
+			delete userData.email
+			onlineUsers.set(socket.id, userData)
 			console.log(`${userData.nickname} is online now!`)
+
+			const create_domino_field = (size = [4, 3], variationsCount = 4) => {
+				if ((size[0] * size[1])%2) {
+					size[0] += 1
+				}
+				const duosCount = (size[0] * size[1])/2
+				let duosValues = []
+				
+				while (duosValues.length < duosCount) {
+					const variation = Math.round(Math.random() * (variationsCount - 1))
+					duosValues.push(variation)
+				}
+
+				duosValues = [...duosValues, ...duosValues].sort(() => Math.random() - 0.5)
+
+				let currentIndex = 0
+				
+				let field = []
+				for (let y = 0; y<size[1]; y++) {
+					field.push([])
+					for (let x = 0; x<size[0]; x++) {
+						field[y].push(duosValues[currentIndex])
+						currentIndex += 1
+					}
+				}
+				return field
+			}
 
 
 			socket.on('join_room', (roomId, callBack) => {
 
-				if (!(roomId in rooms)) {
-					callBack({ message: `room with id = "${roomId}" not exists.` }, null)
+				if (!(roomId in rooms) || rooms[roomId].isStarted) {
+					callBack({ message: `room with id = "${roomId}" not exists or game in room already started.` }, null)
 					return
 				}
 				rooms[roomId].users.push({ socketId: socket.id, isReady: false, host: false })
+
 				socket.join(roomId)
 
 				socket.broadcast.to(roomId).emit('user_entered_room', {
-					nickname: userData.nickname,
+					...userData,
 					isReady: false,
 					host: false,
 				})
@@ -87,11 +132,12 @@ io.on('connect', socket => {
 					id: roomId,
 					users: rooms[roomId].users.map(user => {
 						return {
-							nickname: onlineUsers.get(user.socketId).nickname,
+							...onlineUsers.get(user.socketId),
 							host: user.host,
 							isReady: user.isReady,
 						}
-					})
+					}),
+					isStarted: false,
 				})
 			})
 
@@ -102,22 +148,57 @@ io.on('connect', socket => {
 					callBack({ message: `room with id = "${roomId}" not exists.` })
 					return
 				}
-				const goneUser = rooms[roomId].users.find((user) => user.socketId === socket.id)
+
+				const goneUser = rooms[roomId].users.find(user => user.socketId === socket.id)
+
 				rooms[roomId].users = rooms[roomId].users.filter(user => user.socketId !== socket.id)
+
+				if (goneUser?.host && rooms[roomId].users.length >= 1) {
+					rooms[roomId].users[0].host = true
+					io.sockets.to(roomId).emit('changed_host', {
+						...onlineUsers.get(rooms[roomId].users[0].socketId),
+						host: rooms[roomId].users[0].host,
+						isReady: rooms[roomId].users[0].isReady,
+					})
+				}
+
+				if (rooms[roomId].users.length === 1) {
+					rooms[roomId].isStarted = false
+					io.sockets.to(roomId).emit('end_game')
+				}
+
 				if (rooms[roomId].users.length < 1) {
 					delete rooms[roomId]
 				}
-				// if (goneUser.host) {
-				// rooms[roomId].users[0] = {...rooms[roomId].users[0], host: true}
-				// }
+
 				socket.leave(roomId)
 
-				socket.broadcast.to(roomId).emit('user_left_room', {
-					nickname: onlineUsers.get(socket.id),
-					isReady: goneUser.isReady,
-					host: goneUser.host,
-				})
+				socket.broadcast.to(roomId).emit('user_left_room', userData)
 				callBack(null)
+			})
+
+			
+			socket.on('change_ready_state', (roomId, state) => {
+				rooms[roomId].users = rooms[roomId].users.map(user => {
+					if (onlineUsers.get(user.socketId).id === userData.id) {
+						return {...user, isReady: state}
+					}
+					else {return user}
+				})
+				if (rooms[roomId].users.every(user => user.isReady) && rooms[roomId].users.length > 0) {
+					const newGame = {
+						individualData: {}
+					}
+					rooms[roomId].users.forEach((user) => {
+						newGame.individualData[onlineUsers.get(user.socketId).id] = {
+							dominoes: create_domino_field()
+						}
+					})
+					activeGames[roomId] = newGame
+					io.sockets.to(roomId).emit('start_game', newGame)
+					rooms[roomId].isStarted = true
+				}
+				io.sockets.to(roomId).emit('user_changed_ready_state', userData, state)
 			})
 
 
@@ -129,31 +210,61 @@ io.on('connect', socket => {
 				const newRoom = {
 					users: [
 						{ socketId: socket.id, isReady: false, host: true }
-					]
+					],
+					isStarted: false,
 				}
+				
 				rooms[roomId] = newRoom
 				socket.join(roomId)
 
 				callBack(null, {
 					id: roomId,
 					users: [{
-						nickname: onlineUsers.get(socket.id),
+						...userData,
 						isReady: false,
 						host: true,
 					}],
+					isStarted: false,
 				})
 			})
 
 
-			socket.on('send_message', data => {
-				//room check
-				socket.to(data.roomId).emit('receiving_message', { ...data, from: { nickname: userData.nickname } })
+			socket.on('send_message', (roomId, text) => {
+				io.sockets.to(roomId).emit('receiving_message', { text: text, from: userData })
 			})
 		})
 	})
 
 	socket.on('disconnect', _reason => {
 		if (!onlineUsers.has(socket.id)) { return }
+
+		Object.keys(rooms).forEach(roomId => {
+			if (rooms[roomId].users.some(user => user.socketId === socket.id)) {
+				const goneUser = rooms[roomId].users.find(user => user.socketId === socket.id)
+
+				rooms[roomId].users = rooms[roomId].users.filter(user => user.socketId !== socket.id)
+
+				if (goneUser?.host && rooms[roomId].users.length >= 1) {
+					rooms[roomId].users[0].host = true
+					io.sockets.to(roomId).emit('changed_host', {
+						...onlineUsers.get(rooms[roomId].users[0].socketId),
+						host: rooms[roomId].users[0].host,
+						isReady: rooms[roomId].users[0].isReady,
+					})
+				}
+
+				if (rooms[roomId].users.length === 1) {
+					rooms[roomId].isStarted = false
+					io.sockets.to(roomId).emit('end_game')
+				}
+
+				if (rooms[roomId].users.length < 1) {
+					delete rooms[roomId]
+				}
+
+				io.sockets.to(roomId).emit('user_left_room', onlineUsers.get(socket.id))
+			}
+		});
 
 		console.log(`Bye, ${onlineUsers.get(socket.id).nickname}..`)
 		onlineUsers.delete(socket.id)
@@ -237,6 +348,7 @@ app.post('/signup', (req, res) => {
 		data: {
 			nickname: user.nickname,
 			email: user.email,
+			id: user.id,
 			accessToken,
 			refreshToken
 		}
@@ -271,6 +383,7 @@ app.post('/login', (req, res) => {
 		data: {
 			nickname: user.nickname,
 			email: user.email,
+			id: user.id,
 			accessToken,
 			refreshToken
 		}
