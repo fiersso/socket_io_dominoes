@@ -113,8 +113,13 @@ export const RoomProvider = ({ children }: { children: ReactElement }) => {
             setCurrentRoom(prev => prev ? {...prev, isStarted: GameState} : null)
         })
 
-        socket.on('end_game', () => {
-            setCurrentRoom(prev => prev ? {...prev, isStarted: false} : null)
+        socket.on('end_game', (reason) => {
+            alert(reason)
+            setCurrentRoom(prev => prev ? {...prev, users: prev.users.map(user => { return {...user, isReady: false}}), isStarted: false} : null)
+        })
+
+        socket.on('update_game_state', (newGameState) => {
+            setCurrentRoom(prev => prev ? {...prev, isStarted: newGameState} : null)
         })
     
     }, [])

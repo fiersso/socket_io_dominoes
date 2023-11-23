@@ -1,24 +1,43 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import RoomContext from "../contexts/RoomContext"
 import AuthContext from "../contexts/AuthContext"
 import { Navigate } from "react-router-dom"
-import Domino from "../components/Domino"
+import MainField from "../components/MainField"
+import EnemyField from "../components/EnemyField"
+import {useTimer} from 'react-timer-hook'
 
 type GameStateType = {
   individualData: {
     [userId: string]: { dominoes: (number | null)[][] },
-  }
+  },
+  // fieldSize: number[] | undefined,
 }
 
 function Game({GameState}: {GameState: GameStateType}) {
 
-    const {auth} = useContext(AuthContext)
+    const {auth, socket} = useContext(AuthContext)
 
     const [startVisibility, setStartVisibility] = useState(false)
+    
+    const time = new Date()
+    time.setSeconds(time.getSeconds() + 3)
 
-    const [selected, setSelected] = useState<(null | {coords: number[], value: number})[]>([null, null])
+    const giveUp = () => {
+      socket.emit('give_up', currentRoom?.id)
+    }
+    
+    const timerSpanRef = useRef<null | HTMLSpanElement>(null)
 
+    const {
+      seconds,
+      isRunning,
+    } = useTimer({ autoStart: true, expiryTimestamp: time, onExpire: () => {
+      setStartVisibility(false)
+    }})
+
+    
     const {leaveRoom, currentRoom} = useContext(RoomContext)
+
 
     if (!auth) {
       leaveRoom()
@@ -27,92 +46,69 @@ function Game({GameState}: {GameState: GameStateType}) {
 
     useEffect(() => {
       setStartVisibility(true)
-      setTimeout(() => {
-        setStartVisibility(false)
-      }, 3000)
     }, [])
 
     useEffect(() => {
-      if (selected[0] !== null && selected[1] !== null && selected[0]?.value === selected[1]?.value) {
-          for (let domino of selected) {
-            if (!domino) {return}
-            //socket
-            GameState.individualData[auth.id].dominoes[domino.coords[1]][domino.coords[0]] = null
-          }
-      }
-    }, [selected, GameState.individualData[auth.id].dominoes])
+      if (!timerSpanRef.current) return 
+      timerSpanRef.current.classList.remove("spawnAnimation")
+      timerSpanRef.current.classList.add("spawnAnimation")
+    }, [seconds])
 
   return (
-    <>
-        <h1>{'_________________ /||\\__ /||\\'}</h1>
-        <h1>{'GAME STARTED /// ^\\/\\/^ ///'}</h1>
-        <button onClick={() => leaveRoom()} children={'leave'} />
-        {currentRoom?.users.map((user, i) => <h3 key={i}>{user.nickname} - ID: {user.id}</h3>)}
-        {JSON.stringify(selected)}
-        <div className="Game">
-        <div 
-          className="GameTable"
+    <div style={{
+      margin: 'auto',
+      width: 'fit-content'
+    }}>
+        <div style={{display: 'flex', alignItems: 'end', gap: '1rem', marginBottom: '2rem',marginTop: '2rem'}}>
+          <div>
+            <h1>{'_________________ /||\\__ /||\\'}</h1>
+            <h1>{'GAME STARTED /// ^\\/\\/^ ///'}</h1>
+          </div>
+          <button onClick={() => giveUp()} children={'give up'} />
+        </div>
+        <div className="Game"
           style={{
-            display: 'flex',
-            flexDirection: 'column'
+            display: 'grid',
+            gridTemplateColumns: (currentRoom?.users.length === 2) ? '1fr auto 1fr' : 'repeat(3, 1fr)',
+            gap: '5rem'
           }}
         >
-        {GameState.individualData[auth.id].dominoes.map((row, y) => {
-          return <h2
-            key={y}
-            style={{display: 'flex', flexDirection: 'row'}}
-          >
-            {row.map((value, x) => {
-              return (value !== null) ? <Domino
-                className={selected.map(coords => JSON.stringify(coords)).includes(JSON.stringify({value: value, coords: [x, y]})) ? 'selected' : ''}
-                key={x}
-                value={value}
-                visible={
-                  startVisibility ||
-                  selected.map(coords => JSON.stringify(coords)).includes(JSON.stringify({value: value, coords: [x, y]}))
-                }
-                onClick={() => {
-                  if (selected.every(value => value)) {return}
-                  setSelected(prev => {
-                    const coords = [x, y]
-                    if (!prev[0] && !prev[1]) {
-                      return [{value, coords}, null]
-                    }
-                    if (prev[0] && !prev[1] && prev[0].coords.some((value, i) => value !== coords[i])) {
-                      setTimeout(() => {
-                        setSelected([null, null])
-                      }, 600)
-                      return [prev[0], {value, coords}]
-                    } 
-                    return prev
-                  })
-                }}
-                /> : <div style={{width: '5rem', height: '7rem'}}></div>
-            })}
-            </h2>
-        })}
-        </div>
-        <div className="EnemyGameTable">
-        {currentRoom?.users.map((user, i) => <h1 style={{textAlign: 'center'}} key={i}>{user.nickname} - ID: {user.id}</h1>)}
-        <div>
-          {GameState.individualData[auth.id].dominoes.map((row, y) => {
-            return <h2
-              key={y}
-              style={{display: 'flex', flexDirection: 'row'}}
-            >
-              {row.map((value, x) => {
-                return value !== null
-                ? <Domino className={''} value={value} visible={false} onClick={() => {}}/>
-                : <div style={{width: '5rem', height: '7rem'}}></div>
-              })}
-              </h2>
-          })}
-        </div>
+          
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <div style={{display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'center'}}>
+              <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.8rem', color: 'rgba(100, 100, 100, 1)', fontSize: '2rem'}}><h5>THIS</h5> <h1>YOURS</h1></div>
+              
+            </div>
+            <MainField dominoes={ GameState.individualData[auth.id].dominoes } startVisibility={startVisibility} />
+          </div>
 
+
+          {(currentRoom?.users.length === 2) 
+            ? <h1 style={{width: 'fit-content'}}>{(!isRunning) ? 'VS' : <span ref={timerSpanRef}>{seconds}</span>}</h1>
+            : null
+          }
+          {
+            Object.keys(GameState.individualData).filter(id => +id !== auth.id).map((id, i) => 
+            
+              <div key={i} style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
+              }}>
+                <div style={{display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'center'}}>
+                  <h5 style={{color: 'rgba(100, 100, 100, 1)', fontSize: '3.5rem'}}>{currentRoom?.users.find(user => user.id === +id)?.nickname}</h5>
+                </div>
+                <EnemyField dominoes={ GameState.individualData[id].dominoes } />
+              </div>
+            
+            )
+          }
         </div>
-       
     </div>
-    </>
   )
 }
 

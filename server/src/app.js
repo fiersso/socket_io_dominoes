@@ -49,23 +49,13 @@ const io = new Server(server, {
 })
 
 let onlineUsers = new Map()
-
 let rooms = {}
+let activeGames = {}
 
-let activeGames = {
-	// '<roomId>': {
-	// 	'<userId1>': {
-	// 		dominoes: [
-	// 			[1, 1, 2,],
-	// 			[1, 3, 4],
-	// 			[5, 3, 1],
-	// 			[3, 5, 4]
-	// 		],
-	// 	},
-	// 	'<userId2>': {
-	// 		dominoes: [[1, 1, null,], [1, 3, 4], [5, null, 1], [3, 5, 4]],
-	// 	}
-	// }
+const initEndGame = (roomId, reason) => {
+	if (!(roomId in activeGames)) return
+	rooms[roomId].users = rooms[roomId].users.map(user => { return {...user, isReady: false}})
+	io.sockets.to(roomId).emit('end_game', reason)
 }
 
 io.on('connect', socket => {
@@ -85,9 +75,7 @@ io.on('connect', socket => {
 			console.log(`${userData.nickname} is online now!`)
 
 			const create_domino_field = (size = [4, 3], variationsCount = 4) => {
-				if ((size[0] * size[1])%2) {
-					size[0] += 1
-				}
+				if ((size[0] * size[1]) % 2) {size[0] += 1}
 				const duosCount = (size[0] * size[1])/2
 				let duosValues = []
 				
@@ -99,8 +87,8 @@ io.on('connect', socket => {
 				duosValues = [...duosValues, ...duosValues].sort(() => Math.random() - 0.5)
 
 				let currentIndex = 0
-				
-				let field = []
+				const field = []
+
 				for (let y = 0; y<size[1]; y++) {
 					field.push([])
 					for (let x = 0; x<size[0]; x++) {
@@ -141,7 +129,6 @@ io.on('connect', socket => {
 				})
 			})
 
-
 			socket.on('leave_room', (roomId, callBack) => {
 
 				if (!(roomId in rooms)) {
@@ -162,13 +149,14 @@ io.on('connect', socket => {
 					})
 				}
 
-				if (rooms[roomId].users.length === 1) {
-					rooms[roomId].isStarted = false
-					io.sockets.to(roomId).emit('end_game')
-				}
-
+				
 				if (rooms[roomId].users.length < 1) {
 					delete rooms[roomId]
+				}
+				
+				if ((roomId in rooms) && rooms[roomId].users.length === 1) {
+					rooms[roomId].isStarted = false
+					initEndGame(roomId, `Player ${onlineUsers.get(socket.id).nickname} left the room`)
 				}
 
 				socket.leave(roomId)
@@ -177,8 +165,29 @@ io.on('connect', socket => {
 				callBack(null)
 			})
 
+			socket.on('give_up', (roomId) => {
+				if (!(roomId in rooms) || !(roomId in activeGames)) return
+				initEndGame(roomId, `${onlineUsers.get(socket.id).nickname} give up. HAHAHAHAHAHAHAHAHAHHA LOOOSER`)
+			})
+
+			socket.on('coincidence', (roomId, dominoesCoords) => {
+				if (!(roomId in rooms) || !(roomId in activeGames)) return
+				dominoesCoords.forEach((coords) => {
+					activeGames[roomId].individualData[userData.id].dominoes[coords[1]][coords[0]] = null
+				})
+				
+				io.sockets.to(roomId).emit('update_game_state', activeGames[roomId])
+				
+				if (
+					[...activeGames[roomId].individualData[userData.id].dominoes].flat().every(value => value === null)
+				) {
+					initEndGame(roomId, `Player ${onlineUsers.get(socket.id).nickname} wiiiiin!!!!!`)
+				}
+			})
+
 			
 			socket.on('change_ready_state', (roomId, state) => {
+				if (!(roomId in rooms)) {return}
 				rooms[roomId].users = rooms[roomId].users.map(user => {
 					if (onlineUsers.get(user.socketId).id === userData.id) {
 						return {...user, isReady: state}
@@ -227,11 +236,6 @@ io.on('connect', socket => {
 					isStarted: false,
 				})
 			})
-
-
-			socket.on('send_message', (roomId, text) => {
-				io.sockets.to(roomId).emit('receiving_message', { text: text, from: userData })
-			})
 		})
 	})
 
@@ -252,14 +256,14 @@ io.on('connect', socket => {
 						isReady: rooms[roomId].users[0].isReady,
 					})
 				}
-
-				if (rooms[roomId].users.length === 1) {
-					rooms[roomId].isStarted = false
-					io.sockets.to(roomId).emit('end_game')
-				}
-
+				
 				if (rooms[roomId].users.length < 1) {
 					delete rooms[roomId]
+				}
+				
+				if ((roomId in rooms) && rooms[roomId].users.length === 1) {
+					rooms[roomId].isStarted = false
+					initEndGame(roomId, `Player ${onlineUsers.get(socket.id).nickname} left the room`)
 				}
 
 				io.sockets.to(roomId).emit('user_left_room', onlineUsers.get(socket.id))

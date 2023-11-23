@@ -1,7 +1,18 @@
+/* @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500&display=swap');
+
 * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
+  /* border: 1px solid black; */
+  /* font-family: 'VT323', monospace; */
+  font-family: 'Pixelify Sans', sans-serif;
+}
+
+body {
+  background-color: #121212;
+  color: white;
 }
 
 .domino {
@@ -22,7 +33,12 @@
 
 .Game {
   display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+
+
+
 /* 
 .domino:hover {
   transform: scale(1.1);
@@ -54,4 +70,40 @@
   background-color: rgb(190, 190, 190);
   opacity: 0.8;
   transform: scale(0.8);
+}
+
+@keyframes spawnAnimation {
+  0% {
+    margin-left: 100%;
+    width: 300%;
+  }
+
+  100% {
+    margin-left: 0%;
+    width: 100%;
+  }
+}
+
+.spawnAnimation {
+  animation: spawnAnimation 1s 0s infinite forwards;
+}
+
+.form {
+  width: 14rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  /* background-color: blue; */
+  padding: 1rem;
+  border: 0.1rem ;
+  border: 0.2rem white dashed;
+  margin: 7rem auto;
+  
+}
+
+form[name='signup'], form[name='login'] {
+  /* background-color: red; */
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }

@@ -1,6 +1,6 @@
 .card {
     transform-style: preserve-3d;
-    transition: all 2s cubic-bezier(0.075, 0.82, 0.165, 1);
+    transition: all 1s cubic-bezier(0.075, 0.82, 0.165, 1);
     user-select: none;
     cursor: pointer;
 }
@@ -15,19 +15,38 @@
 
 }
 
-.card.hidden {
-    transform: rotateY(180deg);
-    animation: rotate 1s 1;
+button {
+    padding: 0.3rem 1rem;
 }
 
-@keyframes rotate {
+.card.hidden {
+    transform: rotateY(180deg);
+    /* animation: visible 1s 1; */
+}
+/* 
+@keyframes hidden {
     from {
         transform: rotateZ(0deg);
     }
-    to {
+    50% {
         transform: rotateZ(10deg);
     }
+    to {
+        transform: rotateZ(0deg);
+    }
 }
+
+@keyframes visible {
+    from {
+        transform: rotateY(180deg);
+    }
+    50% {
+        transform: rotateZ(0deg);
+    }
+    to {
+        transform: rotateY(180deg);
+    }
+} */
 
 .card img {
     width: 100%;

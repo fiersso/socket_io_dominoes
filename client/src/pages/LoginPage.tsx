@@ -52,7 +52,7 @@ function SignupPage() {
           <input {...register("password")} />
           {/* <IsolateReRender control={control} /> */}
 
-          <input type="submit" />
+          <button type="submit" children={'sign up'} />
         </form>
         <Link to={'/signup'} children={'Sign up'} />
       </div>

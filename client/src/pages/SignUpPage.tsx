@@ -46,15 +46,20 @@ function SignupPage() {
 
   return (
     <>
-      <div className="form">
+      <div
+        className="form"
+      >
         <h1>Sign up</h1>
-        <form name='signup' onSubmit={onSubmit}>
+        <form
+          name='signup'
+          onSubmit={onSubmit}
+        >
           <input {...register("nickname")} />
           <input {...register("email")} />
           <input {...register("password")} />
           {/* <IsolateReRender control={control} /> */}
 
-          <input type="submit" />
+          <button type="submit" children={'sign up'} />
         </form>
         <Link to={'/login'} children={'Login'}/>
       </div>
