@@ -10,7 +10,8 @@ type roomType = {
     isStarted: false | {
         individualData: {
           [userId: string]: { dominoes: (number | null)[][] },
-        }
+        },
+        fieldSize: number[],
       },
 }
 

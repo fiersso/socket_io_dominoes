@@ -63,7 +63,8 @@ function Lobby() {
                             gap: '0.5rem',
                         }} 
                     >
-                        <h1>room code: <h1
+                        <div style={{marginBottom: '4rem', display: 'flex', flexDirection: 'column', gap: '0.7rem', alignItems: 'center'}}>
+                        <h1>Room code: <h1
                             style={{display: 'inline-block'}}
                         >{currentRoom?.id}</h1></h1>
                         <div style={{
@@ -73,12 +74,13 @@ function Lobby() {
                             <button onClick={() => leaveRoom()} children={'leave'} />
                             <button onClick={() => toggleReadyState()} children={'ready'} />
                         </div>
-                        <h2>Users in room: {'['}{currentRoom.users.length}{']'}</h2>
+                        </div>
+                        <h1>Users in room: {'[ '}{currentRoom.users.length}{' ]'}</h1>
                         {currentRoom.users.map((user, i) => 
-                            <h3 key={i}>{user.nickname} {user.host ? '( host )' : null} -- <h2 style={{
+                            <h2 key={i}><h2 style={{ display: 'inline-block'}}> {user.nickname}</h2> {user.host ? '( host )' : null} -- <h2 style={{
                                 color: user.isReady ? 'rgb(87, 219, 39)' : '#ff0048',
                                 display: 'inline-block'
-                            }}>{user.isReady ? 'ready' : 'is not ready'}</h2></h3>
+                            }}>{user.isReady ? 'ready' : 'is not ready'}</h2></h2>
                         )}
                     </div>
                     : <>
@@ -95,11 +97,11 @@ function Lobby() {
 
                             }}
                         >
-                        <h1 style={{fontSize: '5rem'}}>Join a room.</h1>
-                        <input type="text" placeholder="room id" value={inputRoomID} onChange={(event) => { setRoomID(event.target.value) }} />
-                        <button onClick={() => joinRoom(inputRoomID)} children={'join a room'} />
+                        <h1 style={{fontSize: '4rem'}}>Join a room.</h1>
+                        <input style={{fontSize: '1.5rem', margin: '1rem 0 ', padding: '0.2rem'}} type="text" placeholder="room id" value={inputRoomID} onChange={(event) => { setRoomID(event.target.value) }} />
+                        <button style={{fontSize: '1.2rem'}} onClick={() => joinRoom(inputRoomID)} children={'join a room'} />
                         <p>or</p>
-                        <button onClick={() => createRoom(inputRoomID)} children={'create a room'} />
+                        <button  style={{fontSize: '1.2rem'}} onClick={() => createRoom(inputRoomID)} children={'create a room'} />
                         </div>
                     </>
                 }

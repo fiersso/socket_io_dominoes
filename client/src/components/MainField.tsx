@@ -5,9 +5,10 @@ import RoomContext from "../contexts/RoomContext"
 import { Navigate } from "react-router-dom"
 
 
-function MainField({dominoes, startVisibility}: {
+function MainField({dominoes, fieldSize, startVisibility}: {
     startVisibility: boolean,
     dominoes: (number | null)[][],
+    fieldSize: number[],
 }) {
 
     const [selected, setSelected] = useState<(null | {coords: number[], value: number})[]>([null, null])
@@ -38,8 +39,8 @@ function MainField({dominoes, startVisibility}: {
         // background: 'red',
       display: 'grid',
       width: 'fit-content',
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gridTemplateRows: 'repeat(3, 1fr)',
+      gridTemplateColumns: `repeat(${fieldSize[0]}, 1fr)`,
+      gridTemplateRows: `repeat(${fieldSize[1]}, 1fr)`,
     }}
   >
   {auth && dominoes.map((row, y) =>

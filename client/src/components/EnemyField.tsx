@@ -1,8 +1,8 @@
 import Card from "./Card/Card"
 
 
-function EnemyField({dominoes}: {
-    // startVisibility: boolean,
+function EnemyField({dominoes, fieldSize}: {
+    fieldSize: number[],
     dominoes: (number | null)[][],
 }) {
 
@@ -15,8 +15,8 @@ function EnemyField({dominoes}: {
         padding: '1rem',
       display: 'grid',
       width: 'fit-content',
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gridTemplateRows: 'repeat(3, 1fr)',
+      gridTemplateColumns: `repeat(${fieldSize[0]}, 1fr)`,
+      gridTemplateRows: `repeat(${fieldSize[1]}, 1fr)`,
     }}
   >
   {[...dominoes].flat().map((value, x) =>

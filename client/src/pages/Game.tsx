@@ -10,7 +10,7 @@ type GameStateType = {
   individualData: {
     [userId: string]: { dominoes: (number | null)[][] },
   },
-  // fieldSize: number[] | undefined,
+  fieldSize: number[],
 }
 
 function Game({GameState}: {GameState: GameStateType}) {
@@ -59,7 +59,7 @@ function Game({GameState}: {GameState: GameStateType}) {
       margin: 'auto',
       width: 'fit-content'
     }}>
-        <div style={{display: 'flex', alignItems: 'end', gap: '1rem', marginBottom: '2rem',marginTop: '2rem'}}>
+        <div style={{display: 'flex', alignItems: 'end', gap: '1rem', marginBottom: '1rem',marginTop: '1rem'}}>
           <div>
             <h1>{'_________________ /||\\__ /||\\'}</h1>
             <h1>{'GAME STARTED /// ^\\/\\/^ ///'}</h1>
@@ -83,7 +83,7 @@ function Game({GameState}: {GameState: GameStateType}) {
               <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.8rem', color: 'rgba(100, 100, 100, 1)', fontSize: '2rem'}}><h5>THIS</h5> <h1>YOURS</h1></div>
               
             </div>
-            <MainField dominoes={ GameState.individualData[auth.id].dominoes } startVisibility={startVisibility} />
+            <MainField dominoes={ GameState.individualData[auth.id].dominoes } fieldSize={GameState.fieldSize} startVisibility={startVisibility} />
           </div>
 
 
@@ -102,7 +102,7 @@ function Game({GameState}: {GameState: GameStateType}) {
                 <div style={{display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'center'}}>
                   <h5 style={{color: 'rgba(100, 100, 100, 1)', fontSize: '3.5rem'}}>{currentRoom?.users.find(user => user.id === +id)?.nickname}</h5>
                 </div>
-                <EnemyField dominoes={ GameState.individualData[id].dominoes } />
+                <EnemyField fieldSize={GameState.fieldSize} dominoes={ GameState.individualData[id].dominoes } />
               </div>
             
             )

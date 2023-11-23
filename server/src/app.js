@@ -56,6 +56,7 @@ const initEndGame = (roomId, reason) => {
 	if (!(roomId in activeGames)) return
 	rooms[roomId].users = rooms[roomId].users.map(user => { return {...user, isReady: false}})
 	io.sockets.to(roomId).emit('end_game', reason)
+	delete activeGames[roomId]
 }
 
 io.on('connect', socket => {
@@ -187,6 +188,7 @@ io.on('connect', socket => {
 
 			
 			socket.on('change_ready_state', (roomId, state) => {
+				const fieldSize = [4, 3]
 				if (!(roomId in rooms)) {return}
 				rooms[roomId].users = rooms[roomId].users.map(user => {
 					if (onlineUsers.get(user.socketId).id === userData.id) {
@@ -194,13 +196,14 @@ io.on('connect', socket => {
 					}
 					else {return user}
 				})
-				if (rooms[roomId].users.every(user => user.isReady) && rooms[roomId].users.length > 0) {
+				if (rooms[roomId].users.every(user => user.isReady) && rooms[roomId].users.length > 1) {
 					const newGame = {
-						individualData: {}
+						individualData: {},
+						fieldSize
 					}
 					rooms[roomId].users.forEach((user) => {
 						newGame.individualData[onlineUsers.get(user.socketId).id] = {
-							dominoes: create_domino_field()
+							dominoes: create_domino_field(fieldSize)
 						}
 					})
 					activeGames[roomId] = newGame
